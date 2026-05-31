@@ -1,3 +1,4 @@
+import { FaGoogle, FaGithub } from "react-icons/fa";
 const API_URL = import.meta.env.VITE_API_URL;
 
 function OAuthButtons() {
@@ -13,21 +14,23 @@ function OAuthButtons() {
     };
 
     return (
-        <>
+        <div className="d-flex justify-content-center gap-4">
+
             <button
-                className="btn btn-danger w-100 mb-2"
+                className="btn btn-light border"
                 onClick={loginWithGoogle}
             >
-                Continue with Google
+                <FaGoogle size={24} />
             </button>
 
             <button
-                className="btn btn-dark w-100"
+                className="btn btn-light border"
                 onClick={loginWithGithub}
             >
-                Continue with GitHub
+                <FaGithub size={24} />
             </button>
-        </>
+
+        </div>
     );
 }
 

@@ -27,3 +27,7 @@ export const verifyOtp = (request) => {
         request
     );
 };
+
+export const logout = () => {
+    return API.post("/auth/v1/logout");
+};

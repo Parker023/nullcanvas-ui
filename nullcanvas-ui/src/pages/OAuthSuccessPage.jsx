@@ -6,8 +6,17 @@ function OAuthSuccessPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        navigate("/dashboard");
-    }, []);
 
-    return <div>Signing you in...</div>;
+    
+
+        navigate("/dashboard");
+
+    }, []);
+    return (
+        <div>
+            Signing you in...
+        </div>
+    );
 }
+
+export default OAuthSuccessPage;

@@ -6,6 +6,7 @@ import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import DashboardPage from "../pages/DashboardPage";
 import VerifyOtpPage from "../pages/VerifyOtpPage";
+import OAuthSuccessPage from "../pages/OAuthSuccessPage";
 
 function AppRouter() {
     return (
@@ -35,6 +36,10 @@ function AppRouter() {
                 <Route
                     path="/verify-otp"
                     element={<VerifyOtpPage />}
+                />
+                <Route
+                    path="/oauth-success"
+                    element={<OAuthSuccessPage />}
                 />
 
             </Routes>

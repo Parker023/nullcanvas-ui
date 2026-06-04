@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { verifyOtp } from "../api/authApi";
+import { resendOtp, verifyOtp } from "../api/authApi";
+import { useEffect } from "react";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 function VerifyOtpPage() {
 
@@ -12,7 +14,21 @@ function VerifyOtpPage() {
     const [otp, setOtp] = useState("");
 
     const navigate = useNavigate();
+    const [countdown, setCountdown] = useState(30);
 
+    useEffect(() => {
+
+        if (countdown <= 0) {
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            setCountdown(countdown - 1);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+
+    }, [countdown]);
 
     const handleVerify = async () => {
 
@@ -30,9 +46,34 @@ function VerifyOtpPage() {
 
         } catch (error) {
 
-            alert("Invalid OTP");
+           alert(error.response?.data?.message || "Registration Failed");
         }
     };
+
+    const handleResendOtp
+        = async () => {
+
+            try {
+                console.log("Resending OTP to email:", email);
+
+                await resendOtp({
+                    email
+                });
+
+                alert("OTP Resent");
+                navigate(
+                    "/verify-otp",
+                    {
+                        state: {
+                            email
+                        }
+                    }
+                );
+
+            } catch (error) {
+                alert(error.response?.data?.message || "Registration Failed");
+            }
+        };
 
     return (
         <div className="container vh-100 d-flex justify-content-center align-items-center">
@@ -59,6 +100,19 @@ function VerifyOtpPage() {
                 >
                     Verify
                 </button>
+
+
+                {
+                    countdown > 0
+                        ? <p>Resend OTP in {countdown}s</p>
+                        : (
+                            <button
+                                onClick={handleResendOtp}
+                            >
+                                Resend OTP
+                            </button>
+                        )
+                }
 
             </div>
         </div>

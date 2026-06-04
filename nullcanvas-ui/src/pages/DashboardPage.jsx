@@ -1,9 +1,24 @@
 
 import { logout } from "../api/authApi";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { me } from "../api/authApi";
 
 function DashboardPage() {
     const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+
+        me()
+            .then(response => {
+                setUser(response.data);
+            })
+            .catch(() => {
+                navigate("/login");
+            });
+
+    }, []);
 
     const handleLogout = async () => {
         try {
@@ -18,7 +33,7 @@ function DashboardPage() {
             <div className="container mt-5">
 
                 <h1>
-                    Welcome to NullCanvas
+                    Welcome to NullCanvas {user ? user.name : "User"}!
                 </h1>
 
                 <p>

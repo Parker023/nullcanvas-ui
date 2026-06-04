@@ -19,16 +19,19 @@ function RegisterPage() {
 
     const handleRegister = async () => {
 
+        console.log("Registering user:", { name, email });
+
         try {
 
             if (!isValidEmail(email)) {
                 setEmailError("Please enter a valid email address");
+                console.error("Invalid email:", email);
                 return;
             }
             setEmailError("");
 
             if (!isValidPassword(password)) {
-                  setPasswordError("Please enter a valid password");
+                setPasswordError("Please enter a valid password");
                 return;
             }
             setPasswordError("");
@@ -53,7 +56,7 @@ function RegisterPage() {
 
             console.error(error);
 
-            alert("Registration Failed");
+            alert(error.response?.data?.message || "Registration Failed");
         }
     };
 
@@ -80,7 +83,7 @@ function RegisterPage() {
                         type="email"
                         className={`form-control ${emailError ? "is-invalid" : ""
                             }`}
-                            placeholder="Email"
+                        placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                     />
@@ -95,8 +98,11 @@ function RegisterPage() {
 
                 <div className="input-group mb-3">
                     <input
-                        type={showPassword ? "text" : "password"}
-                        className="form-control"
+                        type={showPassword ? "Text" : "password"}
+                        className={`form-control ${passwordError ? "is-invalid" : ""
+                            }`}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         placeholder="Password"
                     />
 
@@ -107,6 +113,12 @@ function RegisterPage() {
                     >
                         <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`} />
                     </span>
+
+                    {passwordError && (
+                        <div className="invalid-feedback">
+                            {passwordError}
+                        </div>
+                    )}
                 </div>
 
                 <button
@@ -115,7 +127,7 @@ function RegisterPage() {
                 >
                     Register
                 </button>
-                 <hr />
+                <hr />
 
                 <OAuthButtons />
 

@@ -10,15 +10,18 @@ function LoginPage() {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [emailError, setEmailError] = useState("");
+    const [error, setError] = useState("");
 
 
     const navigate = useNavigate();
 
 
-    const handleLogin = async () => {
+    const handleLogin = async (e) => {
+        e.preventDefault();
         try {
             if (!isValidEmail(email)) {
                 setEmailError("Please enter a valid email address");
+                console.error("Invalid email:", email);
                 return;
             }
             setEmailError("");
@@ -33,8 +36,14 @@ function LoginPage() {
             navigate("/dashboard");
 
         } catch (error) {
-            console.error(error);
-            alert("Login Failed");
+            const message =
+                error.response?.data?.message ||
+                error.message ||
+                "Something went wrong";
+
+                alert(message);
+
+            setError(message);
         }
     };
     return (
@@ -53,12 +62,15 @@ function LoginPage() {
                             }`}
                         placeholder="Email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                            setEmail(e.target.value);
+                            setError("");
+                        }}
                     />
 
-                    {emailError && (
-                        <div className="invalid-feedback">
-                            {emailError}
+                    {error && (
+                        <div className="alert alert-danger">
+                            {error}
                         </div>
                     )}
 
@@ -70,7 +82,10 @@ function LoginPage() {
                         className="form-control"
                         placeholder="Enter password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            setError("");
+                        }}
                     />
 
                     <button

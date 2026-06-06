@@ -1,49 +1,31 @@
-
-import { logout } from "../api/authApi";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { me } from "../api/authApi";
+import { logout } from "../api/authApi";
 
 function DashboardPage() {
+
     const navigate = useNavigate();
-    const [user, setUser] = useState(null);
-
-    useEffect(() => {
-
-        me()
-            .then(response => {
-                setUser(response.data);
-            })
-            .catch(() => {
-                navigate("/login");
-            });
-
-    }, []);
 
     const handleLogout = async () => {
+
         try {
+
             await logout();
+
             navigate("/login");
+
         } catch (error) {
-            alert("Logout Failed");
+
+            console.error(error);
         }
     };
+
     return (
-        <>
-            <div className="container mt-5">
 
-                <h1>
-                    Welcome to NullCanvas {user ? user.name : "User"}!
-                </h1>
+        <div className="container mt-5">
 
-                <p>
-                    User successfully logged in.
-                </p>
+            <div className="d-flex justify-content-between align-items-center mb-5">
 
-            </div>
-
-            <div className="d-flex justify-content-between align-items-center">
-
+                <h1>NullCanvas</h1>
 
                 <button
                     className="btn btn-outline-danger"
@@ -52,7 +34,70 @@ function DashboardPage() {
                     Logout
                 </button>
 
-            </div></>
+            </div>
+
+            <div className="row">
+
+                <div className="col-md-4">
+
+                    <div className="card shadow-sm">
+
+                        <div className="card-body">
+
+                            <h5 className="card-title">
+                                Write a Blog
+                            </h5>
+
+                            <p className="card-text">
+                                Create and publish your next article.
+                            </p>
+
+                            <button
+                                className="btn btn-primary"
+                                onClick={() =>
+                                    navigate("/create-blog")
+                                }
+                            >
+                                Start Writing
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div className="col-md-4">
+
+                <div className="card shadow-sm">
+
+                    <div className="card-body">
+
+                        <h5 className="card-title">
+                            My Blogs
+                        </h5>
+
+                        <p className="card-text">
+                            View and manage your blogs.
+                        </p>
+
+                        <button
+                            className="btn btn-outline-primary"
+                            disabled
+                        >
+                            Coming Soon
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     );
 }
 

@@ -7,6 +7,9 @@ import RegisterPage from "../pages/RegisterPage";
 import DashboardPage from "../pages/DashboardPage";
 import VerifyOtpPage from "../pages/VerifyOtpPage";
 import OAuthSuccessPage from "../pages/OAuthSuccessPage";
+import CreateBlogPage from "../pages/CreateBlogPage";
+
+import {ProtectedRoute} from "../components/ProtectedRoute";
 
 function AppRouter() {
     return (
@@ -30,7 +33,11 @@ function AppRouter() {
 
                 <Route
                     path="/dashboard"
-                    element={<DashboardPage />}
+                    element={
+                        <ProtectedRoute>
+                            <DashboardPage />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
@@ -41,6 +48,16 @@ function AppRouter() {
                     path="/oauth-success"
                     element={<OAuthSuccessPage />}
                 />
+
+                 <Route
+                    path="/create-blog"
+                    element={
+                        <ProtectedRoute>
+                            <CreateBlogPage />
+                        </ProtectedRoute>
+                    }
+                />
+
 
             </Routes>
         </BrowserRouter>

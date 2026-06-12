@@ -8,6 +8,7 @@ import DashboardPage from "../pages/DashboardPage";
 import VerifyOtpPage from "../pages/VerifyOtpPage";
 import OAuthSuccessPage from "../pages/OAuthSuccessPage";
 import CreateBlogPage from "../pages/CreateBlogPage";
+import MyBlogsPage from "../pages/MyBlogsPage";
 
 import {ProtectedRoute} from "../components/ProtectedRoute";
 
@@ -54,6 +55,15 @@ function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <CreateBlogPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                 <Route
+                    path="/my-blogs"
+                    element={
+                        <ProtectedRoute>
+                            <MyBlogsPage />
                         </ProtectedRoute>
                     }
                 />

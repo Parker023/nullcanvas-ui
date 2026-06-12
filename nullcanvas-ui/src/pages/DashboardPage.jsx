@@ -39,62 +39,41 @@ function DashboardPage() {
             <div className="row">
 
                 <div className="col-md-4">
-
                     <div className="card shadow-sm">
+                        ...
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => navigate("/create-blog")}
+                        >
+                            Start Writing
+                        </button>
+                    </div>
+                </div>
 
+                <div className="col-md-4">
+                    <div className="card shadow-sm">
                         <div className="card-body">
-
                             <h5 className="card-title">
-                                Write a Blog
+                                My Blogs
                             </h5>
 
                             <p className="card-text">
-                                Create and publish your next article.
+                                View and manage your blogs.
                             </p>
 
                             <button
-                                className="btn btn-primary"
-                                onClick={() =>
-                                    navigate("/create-blog")
-                                }
+                                className="btn btn-outline-primary"
+                                onClick={() => navigate("/my-blogs")}
                             >
-                                Start Writing
+                                View Blogs
                             </button>
-
                         </div>
-
                     </div>
-
                 </div>
 
             </div>
 
-            <div className="col-md-4">
 
-                <div className="card shadow-sm">
-
-                    <div className="card-body">
-
-                        <h5 className="card-title">
-                            My Blogs
-                        </h5>
-
-                        <p className="card-text">
-                            View and manage your blogs.
-                        </p>
-
-                        <button
-                            className="btn btn-outline-primary"
-                            disabled
-                        >
-                            Coming Soon
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
 
         </div>
 

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createBlog } from "../api/blogApi";
 import { createBlogContent } from "../api/blogApi";
 import { uploadChunk } from "../api/blogApi";
+import BlogEditor from "../components/BlogEditor";
 
 
 function CreateBlogPage() {
@@ -11,14 +12,33 @@ function CreateBlogPage() {
 
     const [title, setTitle] = useState("");
     const [summary, setSummary] = useState("");
-    const [content, setContent] = useState("");
+    const [content, setContent] = useState(null);
     const [visibility, setVisibility] = useState("PUBLIC");
     const [status, setStatus] = useState("DRAFT");
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [isDirty, setIsDirty] = useState(false);
+    const [coverImage, setCoverImage] = useState(null);
+    const [coverPreview, setCoverPreview] = useState(null);
 
     const CHUNK_SIZE = 5000;
+
+    const plainText = content
+        ? extractText(content)
+        : "";
+
+    const wordCount = plainText
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .length;
+
+    const readingTime =
+        Math.max(
+            1,
+            Math.ceil(wordCount / 200)
+        );
 
 
     const handleSave = async (e) => {
@@ -32,7 +52,11 @@ function CreateBlogPage() {
             return;
         }
 
-        if (!content.trim()) {
+        if (
+            !content ||
+            !content.content ||
+            content.content.length === 0
+        ) {
             setError("Content is required");
             return;
         }
@@ -73,6 +97,7 @@ function CreateBlogPage() {
                 );
 
             }
+            setIsDirty(false);
 
             navigate("/dashboard");
 
@@ -90,6 +115,21 @@ function CreateBlogPage() {
             setLoading(false);
 
         }
+    };
+
+    const handleCoverImageChange = (e) => {
+
+        const file = e.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        setCoverImage(file);
+
+        setCoverPreview(
+            URL.createObjectURL(file)
+        );
     };
 
     function splitIntoChunks(content) {
@@ -147,168 +187,232 @@ function CreateBlogPage() {
 
     }
 
+    function extractText(node) {
+
+        if (!node) {
+            return "";
+        }
+
+        if (node.type === "text") {
+            return node.text || "";
+        }
+
+        let text = "";
+
+        if (node.content) {
+            node.content.forEach(child => {
+                text += extractText(child) + " ";
+            });
+        }
+
+        return text;
+    }
+
     return (
         <div className="container mt-5">
 
             <div className="row justify-content-center">
 
-                <div className="col-md-8">
+                <div className="col-lg-10 col-xl-8">
 
-                    <div className="card shadow">
 
-                        <div className="card-body">
+                    <div className="card-body">
 
-                            <h2 className="mb-4">
-                                Create Blog
-                            </h2>
 
-                            {error && (
-                                <div className="alert alert-danger">
-                                    {error}
-                                </div>
-                            )}
+                        {error && (
+                            <div className="alert alert-danger">
+                                {error}
+                            </div>
+                        )}
 
-                            <form onSubmit={handleSave}>
 
-                                <div className="mb-3">
 
-                                    <label className="form-label">
-                                        Title
-                                    </label>
+                        <div
+                            className="d-flex justify-content-between align-items-center py-3 mb-4 bg-white"
+                            style={{
+                                position: "sticky",
+                                top: 0,
+                                zIndex: 1000
+                            }}
+                        >
 
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        value={title}
-                                        onChange={(e) =>
-                                            setTitle(e.target.value)
-                                        }
-                                    />
+                            <div>
+                                <h5 className="text-muted mb-0">
+                                    New Blog
+                                </h5>
+                            </div>
 
-                                </div>
+                            <div className="d-flex align-items-center gap-3">
 
-                                <div className="mb-3">
-
-                                    <label className="form-label">
-                                        Summary
-                                    </label>
-
-                                    <textarea
-                                        rows="3"
-                                        className="form-control"
-                                        value={summary}
-                                        onChange={(e) =>
-                                            setSummary(e.target.value)
-                                        }
-                                    />
-
-                                </div>
-                                <div className="mb-4">
-
-                                    <label className="form-label fw-bold">
-                                        Visibility
-                                    </label>
-
-                                    <div className="btn-group w-100">
-
-                                        <button
-                                            type="button"
-                                            className={
-                                                visibility === "PUBLIC"
-                                                    ? "btn btn-primary"
-                                                    : "btn btn-outline-primary"
-                                            }
-                                            onClick={() => setVisibility("PUBLIC")}
-                                        >
-                                            Public
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            className={
-                                                visibility === "PRIVATE"
-                                                    ? "btn btn-primary"
-                                                    : "btn btn-outline-primary"
-                                            }
-                                            onClick={() => setVisibility("PRIVATE")}
-                                        >
-                                            Private
-                                        </button>
-
-                                    </div>
-
-                                </div>
-
-                                <div className="mb-4">
-
-                                    <label className="form-label fw-bold">
-                                        Status
-                                    </label>
-
-                                    <div className="btn-group w-100">
-
-                                        <button
-                                            type="button"
-                                            className={
-                                                status === "DRAFT"
-                                                    ? "btn btn-primary"
-                                                    : "btn btn-outline-primary"
-                                            }
-                                            onClick={() => setStatus("DRAFT")}
-                                        >
-                                            Draft
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            className={
-                                                status === "PUBLISHED"
-                                                    ? "btn btn-primary"
-                                                    : "btn btn-outline-primary"
-                                            }
-                                            onClick={() => setStatus("PUBLISHED")}
-                                        >
-                                            Publish
-                                        </button>
-
-                                    </div>
-
-                                </div>
-
-                                <div className="mb-3">
-
-                                    <label className="form-label">
-                                        Content
-                                    </label>
-
-                                    <textarea
-                                        rows="15"
-                                        className="form-control"
-                                        value={content}
-                                        onChange={(e) =>
-                                            setContent(e.target.value)
-                                        }
-                                    />
-
-                                </div>
+                                {isDirty ? (
+                                    <span className="text-warning">
+                                        Unsaved Changes
+                                    </span>
+                                ) : (
+                                    <span className="text-success">
+                                        Saved
+                                    </span>
+                                )}
 
                                 <button
                                     type="submit"
                                     className="btn btn-primary"
                                     disabled={loading}
                                 >
-                                    {
-                                        loading
-                                            ? "Saving..."
-                                            : "Save Blog"
-                                    }
+                                    {loading ? "Saving..." : "Save Blog"}
                                 </button>
 
-                            </form>
+                            </div>
 
                         </div>
 
+                        <form onSubmit={handleSave}>
+
+                            <div className="mb-3">
+
+                                <div className="mb-4">
+
+                                    <label className="form-label fw-semibold">
+                                        Cover Image
+                                    </label>
+
+                                    <input
+                                        type="file"
+                                        className="form-control"
+                                        accept="image/*"
+                                        onChange={handleCoverImageChange}
+                                    />
+
+                                    {
+                                        coverPreview && (
+                                            <div className="mb-4">
+
+                                                <img
+                                                    src={coverPreview}
+                                                    alt="Cover Preview"
+                                                    className="img-fluid rounded shadow-sm"
+                                                />
+
+                                            </div>
+                                        )
+                                    }
+
+                                </div>
+
+                                <input
+                                    type="text"
+                                    className="form-control border-0 shadow-none fs-1 fw-bold"
+                                    placeholder="Untitled Blog"
+                                    value={title}
+                                    onChange={(e) => {
+                                        setTitle(e.target.value);
+                                        setIsDirty(true);
+                                    }}
+                                />
+
+                            </div>
+
+                            <div className="mb-3">
+
+                                <textarea
+                                    rows="2"
+                                    className="form-control border-0 shadow-none text-muted"
+                                    placeholder="Write a short summary..."
+                                    value={summary}
+                                    onChange={(e) => {
+                                        setSummary(e.target.value);
+                                        setIsDirty(true);
+                                    }}
+                                />
+
+                            </div>
+
+
+                            <div className="d-flex gap-3 mb-4">
+
+                                <div>
+                                    <label className="form-label small text-muted">
+                                        Visibility
+                                    </label>
+
+                                    <select
+                                        className="form-select"
+                                        value={visibility}
+                                        onChange={(e) =>
+                                            setVisibility(e.target.value)
+                                        }
+                                    >
+                                        <option value="PUBLIC">
+                                            Public
+                                        </option>
+
+                                        <option value="PRIVATE">
+                                            Private
+                                        </option>
+
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="form-label small text-muted">
+                                        Status
+                                    </label>
+
+                                    <select
+                                        className="form-select"
+                                        value={status}
+                                        onChange={(e) =>
+                                            setStatus(e.target.value)
+                                        }
+                                    >
+                                        <option value="DRAFT">
+                                            Draft
+                                        </option>
+
+                                        <option value="PUBLISHED">
+                                            Publish
+                                        </option>
+
+                                    </select>
+                                </div>
+
+                            </div>
+
+                            <div className="mb-3">
+
+                                <label className="form-label">
+                                    Content
+                                </label>
+
+                                <BlogEditor
+                                    content={content}
+                                    onChange={(value) => {
+                                        setContent(value);
+                                        setIsDirty(true);
+                                    }}
+                                />
+
+                                <div className="d-flex justify-content-between mt-2 text-muted small">
+
+                                    <span>
+                                        {wordCount} words
+                                    </span>
+
+                                    <span>
+                                        {readingTime} min read
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+
+                        </form>
+
                     </div>
+
+
 
                 </div>
 

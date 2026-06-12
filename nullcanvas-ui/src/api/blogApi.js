@@ -31,3 +31,11 @@ export const uploadChunk = (
         payload
     );
 };
+
+export const getMyBlogs = async (page = 0, size = 10) => {
+    const response = await API.get("/blog/v1/my-blogs", {
+        params: { page, size }
+    });
+
+    return response.data;
+};

@@ -1,8 +1,23 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import { useEffect } from "react";
 
 export default function BlogEditor({ content, onChange }) {
+
+
+    useEffect(() => {
+
+        if (
+            editor &&
+            content
+        ) {
+            editor.commands.setContent(
+                content
+            );
+        }
+
+    }, [editor, content]);
 
     const editor = useEditor({
         extensions: [

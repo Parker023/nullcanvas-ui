@@ -9,6 +9,8 @@ import VerifyOtpPage from "../pages/VerifyOtpPage";
 import OAuthSuccessPage from "../pages/OAuthSuccessPage";
 import CreateBlogPage from "../pages/CreateBlogPage";
 import MyBlogsPage from "../pages/MyBlogsPage";
+import ViewBlogPage from "../pages/ViewBlogPage";
+import EditBlogPage from "../pages/EditBlogPage";
 
 import {ProtectedRoute} from "../components/ProtectedRoute";
 
@@ -67,6 +69,25 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/blog/:blogId/:slug"
+                    element={
+                        <ProtectedRoute>
+                            <ViewBlogPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/edit-blog/:blogId/:slug"
+                    element={
+                        <ProtectedRoute>
+                            <EditBlogPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+
 
 
             </Routes>

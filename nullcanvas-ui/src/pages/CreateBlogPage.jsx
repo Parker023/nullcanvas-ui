@@ -258,6 +258,7 @@ function CreateBlogPage() {
                                     type="submit"
                                     className="btn btn-primary"
                                     disabled={loading}
+                                    onClick={handleSave}
                                 >
                                     {loading ? "Saving..." : "Save Blog"}
                                 </button>

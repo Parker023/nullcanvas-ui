@@ -39,3 +39,23 @@ export const getMyBlogs = async (page = 0, size = 10) => {
 
     return response.data;
 };
+
+export const getBlogContent = async (
+    blogId,
+    slug
+) => {
+
+    const response = await API.get(
+        `/blog/v1/content/${blogId}/${slug}`
+    );
+
+    return response.data;
+};
+export const deleteBlog = async (blogId) => {
+
+    const response = await API.delete(
+        `/blog/v1/${blogId}`
+    );
+
+    return response.data;
+};

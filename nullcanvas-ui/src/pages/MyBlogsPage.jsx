@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { getMyBlogs } from "../api/blogApi";
+import { useNavigate } from "react-router-dom";
+import { deleteBlog } from "../api/blogApi";
 
 function MyBlogsPage() {
 
+    const navigate = useNavigate();
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [pageInfo, setPageInfo] = useState(null);
+    const [selectedBlogId, setSelectedBlogId] = useState(null);
 
 
     useEffect(() => {
@@ -33,6 +37,36 @@ function MyBlogsPage() {
 
     if (loading) {
         return <div>Loading...</div>;
+    }
+
+    function handleDeleteClick(blogId) {
+
+        setSelectedBlogId(blogId);
+    }
+
+    async function confirmDelete() {
+
+        try {
+
+            await deleteBlog(
+                selectedBlogId
+            );
+
+            setBlogs(
+                prev =>
+                    prev.filter(
+                        blog =>
+                            blog.publicId !==
+                            selectedBlogId
+                    )
+            );
+
+            setSelectedBlogId(null);
+
+        } catch (error) {
+
+            console.error(error);
+        }
     }
 
     return (
@@ -70,6 +104,33 @@ function MyBlogsPage() {
                             {new Date(blog.createdAt).toLocaleDateString()}
                         </small>
                     </div>
+                    <button
+                        className="btn btn-outline-primary"
+                        onClick={() =>
+                            navigate(`/blog/${blog.publicId}/${blog.slug}`)
+                        }
+                    >
+                        View
+                    </button>
+                    <button
+                        className="btn btn-outline-danger"
+                        onClick={() =>
+                            handleDeleteClick(blog.publicId)
+                        }
+                    >
+                        Delete
+                    </button>
+
+                    <button
+                        className="btn btn-outline-secondary"
+                        onClick={() =>
+                            navigate(
+                                `/edit-blog/${blog.publicId}/${blog.slug}`
+                            )
+                        }
+                    >
+                        Edit
+                    </button>
                 </div>
             ))}
 
@@ -90,6 +151,64 @@ function MyBlogsPage() {
             >
                 Next
             </button>
+
+
+            {
+                selectedBlogId && (
+
+                    <div
+                        className="modal d-block"
+                        tabIndex="-1"
+                    >
+
+                        <div className="modal-dialog">
+
+                            <div className="modal-content">
+
+                                <div className="modal-header">
+
+                                    <h5 className="modal-title">
+                                        Delete Blog
+                                    </h5>
+
+                                </div>
+
+                                <div className="modal-body">
+
+                                    <p>
+                                        Are you sure you want to delete this blog?
+                                    </p>
+
+                                </div>
+
+                                <div className="modal-footer">
+
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() =>
+                                            setSelectedBlogId(null)
+                                        }
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    <button
+                                        className="btn btn-danger"
+                                        onClick={confirmDelete}
+                                    >
+                                        Delete
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                )
+            }
         </div>
     );
 }

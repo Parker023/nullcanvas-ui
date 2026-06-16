@@ -6,19 +6,6 @@ import { useEffect } from "react";
 export default function BlogEditor({ content, onChange }) {
 
 
-    useEffect(() => {
-
-        if (
-            editor &&
-            content
-        ) {
-            editor.commands.setContent(
-                content
-            );
-        }
-
-    }, [editor, content]);
-
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -26,11 +13,32 @@ export default function BlogEditor({ content, onChange }) {
                 placeholder: "Start writing your story..."
             })
         ],
-        content,
-        onUpdate: ({ editor }) => {
-            onChange(editor.getJSON());
-        }
+        content: content ?? {
+            type: "doc",
+            content: []
+        },
     });
+
+    useEffect(() => {
+
+        if (!editor) {
+            return;
+        }
+
+        const updateHandler = () => {
+            onChange(editor.getJSON());
+        };
+
+        editor.on("update", updateHandler);
+
+        return () => {
+            editor.off("update", updateHandler);
+        };
+
+    }, [editor, onChange]);
+
+
+
     if (!editor) {
         return null;
     }

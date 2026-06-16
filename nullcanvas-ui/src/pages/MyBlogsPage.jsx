@@ -18,9 +18,11 @@ function MyBlogsPage() {
         loadBlogs();
     }, []);
 
-    const loadBlogs = async () => {
+    const loadBlogs = async (pageNumber = 0) => {
         try {
-            const response = await getMyBlogs();
+            const response = await getMyBlogs(pageNumber);
+
+            setPage(pageNumber);
             setBlogs(response.content);
             setPageInfo({
                 currentPage: response.number,
@@ -70,7 +72,10 @@ function MyBlogsPage() {
     }
 
     return (
+
+
         <div>
+
 
             <button
                 className="btn btn-primary mb-3"
@@ -80,77 +85,111 @@ function MyBlogsPage() {
             </button>
             <h1>My Blogs</h1>
 
-            {blogs.map(blog => (
-                <div
-                    key={blog.publicId}
-                    className="card mb-3 shadow-sm"
-                >
-                    <div className="card-body">
-                        <h5>{blog.title}</h5>
-
-                        <p>{blog.summary}</p>
-
-                        <div className="mb-2">
-                            <span className="badge bg-secondary me-2">
-                                {blog.status}
-                            </span>
-
-                            <span className="badge bg-info">
-                                {blog.visibility}
-                            </span>
-                        </div>
-
-                        <small className="text-muted">
-                            {new Date(blog.createdAt).toLocaleDateString()}
-                        </small>
-                    </div>
-                    <button
-                        className="btn btn-outline-primary"
-                        onClick={() =>
-                            navigate(`/blog/${blog.publicId}/${blog.slug}`)
-                        }
-                    >
-                        View
-                    </button>
-                    <button
-                        className="btn btn-outline-danger"
-                        onClick={() =>
-                            handleDeleteClick(blog.publicId)
-                        }
-                    >
-                        Delete
-                    </button>
+            {blogs.length === 0 ? (
+                <div className="text-center mt-5">
+                    <h3>No blogs yet</h3>
 
                     <button
-                        className="btn btn-outline-secondary"
-                        onClick={() =>
-                            navigate(
-                                `/edit-blog/${blog.publicId}/${blog.slug}`
-                            )
-                        }
+                        className="btn btn-primary"
+                        onClick={() => navigate("/create-blog")}
                     >
-                        Edit
+                        Create Blog
                     </button>
                 </div>
-            ))}
+            ) : (
+
+                blogs.map(blog => (
+                    <div
+                        key={blog.publicId}
+                        className="card mb-3 shadow-sm"
+                    >
+
+                        {
+                            blog.coverImageUrl ? (
+                                <img
+                                    src={blog.coverImageUrl}
+                                    alt={blog.title}
+                                    className="card-img-top"
+                                    style={{
+                                        height: "200px",
+                                        objectFit: "cover"
+                                    }}
+                                />
+                            ) : (
+                                <div
+                                    className="bg-light d-flex align-items-center justify-content-center"
+                                    style={{ height: "200px" }}
+                                >
+                                    No Cover
+                                </div>
+                            )
+                        }
+                        <div className="card-body">
+                            <h5>{blog.title}</h5>
+
+                            <p>{blog.summary}</p>
+
+                            <div className="mb-2">
+                                <span className="badge bg-secondary me-2">
+                                    {blog.status}
+                                </span>
+
+                                <span className="badge bg-info">
+                                    {blog.visibility}
+                                </span>
+                            </div>
+
+                            <small className="text-muted">
+                                {new Date(blog.createdAt).toLocaleDateString()}
+                            </small>
+                        </div>
+                        <button
+                            className="btn btn-outline-primary"
+                            onClick={() =>
+                                navigate(`/blog/${blog.publicId}/${blog.slug}`)
+                            }
+                        >
+                            View
+                        </button>
+                        <button
+                            className="btn btn-outline-danger"
+                            onClick={() =>
+                                handleDeleteClick(blog.publicId)
+                            }
+                        >
+                            Delete
+                        </button>
+
+                        <button
+                            className="btn btn-outline-secondary"
+                            onClick={() =>
+                                navigate(
+                                    `/edit-blog/${blog.publicId}/${blog.slug}`
+                                )
+                            }
+                        >
+                            Edit
+                        </button>
+                    </div>
+                ))
+            )}
 
             <button
-                disabled={page === 0}
-                onClick={() => loadBlogs(page - 1)}
+                disabled={pageInfo?.first}
+                onClick={() => loadBlogs(pageInfo.currentPage - 1)}
             >
                 Previous
             </button>
-
             <span>
-                {page + 1} / {totalPages}
+                {pageInfo?.currentPage + 1} / {pageInfo?.totalPages}
             </span>
-
             <button
-                disabled={page + 1 >= totalPages}
-                onClick={() => loadBlogs(page + 1)}
+                disabled={pageInfo?.last}
+                onClick={() => loadBlogs(pageInfo.currentPage + 1)}
             >
                 Next
             </button>
+
 
 
             {

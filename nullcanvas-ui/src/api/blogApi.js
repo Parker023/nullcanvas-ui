@@ -59,3 +59,25 @@ export const deleteBlog = async (blogId) => {
 
     return response.data;
 };
+
+export const updateMetadata = async (
+    blogId,
+    metadata
+) => {
+
+    return API.put(
+        `/blog/v1/${blogId}/metadata`,
+        metadata
+    );
+};
+
+export const updateContent = async (
+    blogId,
+    content
+) => {
+
+    return API.put(
+        `/blog/v1/${blogId}/content`,
+        content
+    );
+};

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { logout } from "../api/authApi";
+import { DashboardCard } from "../components/dashboard/DashboardCard";
 
 function DashboardPage() {
 
@@ -35,41 +36,27 @@ function DashboardPage() {
                 </button>
 
             </div>
+            <p className="text-muted">
+                Write, publish and manage your blogs.
+            </p>
 
             <div className="row">
 
-                <div className="col-md-4">
-                    <div className="card shadow-sm">
-                        ...
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => navigate("/create-blog")}
-                        >
-                            Start Writing
-                        </button>
-                    </div>
-                </div>
+                <DashboardCard
+                    icon="✍️"
+                    title="Create Blog"
+                    description="Start writing a new article."
+                    buttonText="New Blog"
+                    onClick={() => navigate("/create-blog")}
+                />
 
-                <div className="col-md-4">
-                    <div className="card shadow-sm">
-                        <div className="card-body">
-                            <h5 className="card-title">
-                                My Blogs
-                            </h5>
-
-                            <p className="card-text">
-                                View and manage your blogs.
-                            </p>
-
-                            <button
-                                className="btn btn-outline-primary"
-                                onClick={() => navigate("/my-blogs")}
-                            >
-                                View Blogs
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <DashboardCard
+                    icon="📝"
+                    title="My Blogs"
+                    description="View and manage your published articles."
+                    buttonText="View Blogs"
+                    onClick={() => navigate("/my-blogs")}
+                />
 
             </div>
 

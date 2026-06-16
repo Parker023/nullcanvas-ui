@@ -1,9 +1,13 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createBlog } from "../api/blogApi";
 import { createBlogContent } from "../api/blogApi";
 import { uploadChunk } from "../api/blogApi";
 import BlogEditor from "../components/BlogEditor";
+import {
+    useState,
+    useCallback,
+    useMemo
+} from "react";
 
 
 function CreateBlogPage() {
@@ -22,11 +26,24 @@ function CreateBlogPage() {
     const [coverImage, setCoverImage] = useState(null);
     const [coverPreview, setCoverPreview] = useState(null);
 
+
     const CHUNK_SIZE = 5000;
 
-    const plainText = content
-        ? extractText(content)
-        : "";
+    const plainText = useMemo(() => {
+
+        return content
+            ? extractText(content)
+            : "";
+
+    }, [content]);
+
+    const handleContentChange = useCallback((value) => {
+
+        setContent(value);
+        setIsDirty(true);
+
+    }, []);
+
 
     const wordCount = plainText
         .trim()
@@ -75,14 +92,17 @@ function CreateBlogPage() {
             const blogId =
                 blog.data.blogPublicId;
 
+            const contentJson =
+                JSON.stringify(content);
+
             const useChunkUpload =
-                content.length > CHUNK_SIZE;
+                contentJson.length > CHUNK_SIZE;
 
             if (useChunkUpload) {
 
                 await uploadChunkedContent(
                     blogId,
-                    content
+                    contentJson
                 );
 
             } else {
@@ -90,9 +110,7 @@ function CreateBlogPage() {
                 await createBlogContent(
                     blogId,
                     {
-                        content: {
-                            content: content
-                        }
+                        content
                     }
                 );
 
@@ -387,10 +405,7 @@ function CreateBlogPage() {
 
                                 <BlogEditor
                                     content={content}
-                                    onChange={(value) => {
-                                        setContent(value);
-                                        setIsDirty(true);
-                                    }}
+                                    onChange={handleContentChange}
                                 />
 
                                 <div className="d-flex justify-content-between mt-2 text-muted small">

@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getBlogContent, updateContent, updateMetadata } from "../api/blogApi";
+import { getBlogContent, updateContent, updateMetadata, uploadImage } from "../api/blogApi";
 import BlogEditor from "../components/BlogEditor";
 import { useNavigate } from "react-router-dom";
 
@@ -12,9 +12,14 @@ function EditBlogPage() {
     const [loading, setLoading] = useState(true);
     const [title, setTitle] = useState("");
     const [summary, setSummary] = useState("");
-    const [content, setContent] = useState(null);
+    const [content, setContent] =
+        useState({
+            type: "doc",
+            content: []
+        });
     const [visibility, setVisibility] = useState("PUBLIC");
     const [status, setStatus] = useState("DRAFT");
+    const [coverImageUrl, setCoverImageUrl] = useState("");
 
     useEffect(() => {
         loadBlog();
@@ -34,7 +39,8 @@ function EditBlogPage() {
             setSummary(response.metadata.summary);
             setVisibility(response.metadata.visibility);
             setStatus(response.metadata.status);
-            setContent(response.content.content);
+            setContent(response.content);
+            setCoverImageUrl(response.metadata.coverImageUrl || "");
 
 
 
@@ -54,7 +60,8 @@ function EditBlogPage() {
                     title,
                     summary,
                     visibility,
-                    status
+                    status,
+                    coverImageUrl
                 }
             );
 
@@ -75,6 +82,39 @@ function EditBlogPage() {
             alert("Failed to update blog.");
         }
     }
+    async function handleCoverUpload(
+        event
+    ) {
+
+        const file =
+            event.target.files[0];
+
+        if (!file) {
+            return;
+        }
+
+        try {
+
+            const response =
+                await uploadImage(
+                    file,
+                    blogId,
+                    "COVER_IMAGE"
+                );
+
+            setCoverImageUrl(
+                response.url
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "Failed to upload image"
+            );
+        }
+    }
 
     if (loading) {
         return <div>Loading...</div>;
@@ -84,6 +124,28 @@ function EditBlogPage() {
         <div className="container mt-5">
 
             <h1>Edit Blog</h1>
+
+            {
+                coverImageUrl && (
+
+                    <div className="mb-4">
+
+                        <img
+                            src={coverImageUrl}
+                            alt="Cover"
+                            className="img-fluid rounded"
+                            style={{
+                                maxHeight: "300px",
+                                width: "100%",
+                                objectFit: "cover"
+                            }}
+                        />
+
+                    </div>
+
+                )
+            }
+
 
             <div className="mb-3">
                 <label className="form-label">Title</label>
@@ -103,6 +165,22 @@ function EditBlogPage() {
                     value={summary}
                     onChange={e => setSummary(e.target.value)}
                 ></textarea>
+            </div>
+
+            <div className="mb-4">
+
+                <label className="form-label fw-bold">
+                    Cover Image URL
+                </label>
+
+                <input
+                    type="file"
+                    accept="image/*"
+                    className="form-control"
+                    onChange={handleCoverUpload}
+                />
+
+
             </div>
             <div className="mb-4">
 

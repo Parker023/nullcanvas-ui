@@ -81,3 +81,37 @@ export const updateContent = async (
         content
     );
 };
+
+export const getRecentBlogs = async () => {
+    const response =
+        await API.get("/blog/v1/recent");
+
+    return response.data;
+};
+
+export const uploadImage = async (file, blogId, type) => {
+
+    const formData = new FormData();
+
+    formData.append(
+        "file",
+        file
+    );
+
+    const response =
+        await API.post(
+            `/v1/resources/${blogId}/upload`,
+            formData,
+            {
+                params: {
+                    type
+                },
+                headers: {
+                    "Content-Type":
+                        "multipart/form-data"
+                }
+            }
+        );
+
+    return response.data;
+};

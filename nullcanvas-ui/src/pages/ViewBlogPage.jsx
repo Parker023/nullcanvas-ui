@@ -42,9 +42,7 @@ function ViewBlogPage() {
             <hr />
 
             <BlogViewer
-                content={
-                    blog.content.content
-                }
+                content={blog.content}
             />
 
         </div>

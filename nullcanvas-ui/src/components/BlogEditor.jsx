@@ -10,13 +10,14 @@ export default function BlogEditor({ content, onChange }) {
         extensions: [
             StarterKit,
             Placeholder.configure({
-                placeholder: "Start writing your story..."
+                placeholder:
+                    "Start writing your story..."
             })
         ],
-        content: content ?? {
+        content: {
             type: "doc",
             content: []
-        },
+        }
     });
 
     useEffect(() => {
@@ -26,16 +27,37 @@ export default function BlogEditor({ content, onChange }) {
         }
 
         const updateHandler = () => {
-            onChange(editor.getJSON());
+            onChange(
+                editor.getJSON()
+            );
         };
 
-        editor.on("update", updateHandler);
+        editor.on(
+            "update",
+            updateHandler
+        );
 
         return () => {
-            editor.off("update", updateHandler);
+            editor.off(
+                "update",
+                updateHandler
+            );
         };
 
     }, [editor, onChange]);
+
+    useEffect(() => {
+
+        if (!editor || !content) {
+            return;
+        }
+
+        editor.commands.setContent(
+            content,
+            false
+        );
+
+    }, [editor, content]);
 
 
 

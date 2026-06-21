@@ -1,13 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { createBlog } from "../api/blogApi";
-import { createBlogContent } from "../api/blogApi";
+import { createBlog, uploadImage } from "../api/blogApi";
+import { createBlogContent, initializeBlog } from "../api/blogApi";
 import { uploadChunk } from "../api/blogApi";
 import BlogEditor from "../components/BlogEditor";
-import {
-    useState,
-    useCallback,
-    useMemo
-} from "react";
+import { getAllTags, createTag } from "../api/tagService";
+import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
+import { useState, useCallback, useMemo, useEffect } from "react";
 
 
 function CreateBlogPage() {
@@ -19,15 +18,62 @@ function CreateBlogPage() {
     const [content, setContent] = useState(null);
     const [visibility, setVisibility] = useState("PUBLIC");
     const [status, setStatus] = useState("DRAFT");
+    const [tags, setTags] = useState([]);
+    const [selectedTags, setSelectedTags] = useState([]);
+    const [newTagName, setNewTagName] = useState("");
+    const [blogPublicId, setBlogPublicId] = useState("");
 
-    const [loading, setLoading] = useState(false);
+
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [isDirty, setIsDirty] = useState(false);
     const [coverImage, setCoverImage] = useState(null);
     const [coverPreview, setCoverPreview] = useState(null);
+    const [coverImageUrl, setCoverImageUrl] = useState("");
 
 
     const CHUNK_SIZE = 5000;
+
+    useEffect(() => {
+        
+        if (!blogPublicId) {
+            initializeDraft();
+        }
+        loadTags();
+    }, []);
+
+
+    async function initializeDraft() {
+
+        try {
+
+            const response =
+                await initializeBlog();
+
+            setBlogPublicId(
+                response.data.blogPublicId
+            );
+
+           console.log("BlogEditor blogPublicId", response);
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "Failed to initialize blog"
+            );
+        } finally {
+
+            setLoading(false);
+        }
+    }
+
+    const tagOptions = tags.map(tag => ({
+        value: tag.publicId,
+        label: tag.name
+    }));
 
     const plainText = useMemo(() => {
 
@@ -36,6 +82,62 @@ function CreateBlogPage() {
             : "";
 
     }, [content]);
+
+    const loadTags = async () => {
+        const response = await getAllTags();
+        setTags(response.data);
+    };
+
+
+    const handleCreateTag = async (inputValue) => {
+        const normalizedInput = inputValue.trim().toLowerCase();
+
+        if (!normalizedInput) {
+            return;
+        }
+
+        const existingTag = tags.find(
+            tag =>
+                tag.name.trim().toLowerCase() === normalizedInput
+        );
+
+        if (existingTag) {
+            const alreadySelected = selectedTags.some(
+                selected =>
+                    selected.value === existingTag.publicId
+            );
+
+            if (!alreadySelected) {
+                setSelectedTags(prev => [
+                    ...prev,
+                    {
+                        value: createdTag.tagPublicId,
+                        label: createdTag.name
+                    }
+                ]);
+            }
+
+            return;
+        }
+
+        try {
+            const response = await createTag(inputValue);
+
+            const createdTag = response.data;
+
+            setTags(prev => [...prev, createdTag]);
+
+            setSelectedTags(prev => [
+                ...prev,
+                {
+                    value: createdTag.tagPublicId,
+                    label: createdTag.name
+                }
+            ]);
+        } catch (error) {
+            console.error("Failed to create tag", error);
+        }
+    };
 
     const handleContentChange = useCallback((value) => {
 
@@ -80,17 +182,35 @@ function CreateBlogPage() {
 
         try {
 
-            setLoading(true);
 
-            const blog = await createBlog({
+            const tagPublicIds = selectedTags.map(tag => tag.value);
+
+
+            const blog = await createBlog(blogPublicId, {
                 title,
                 summary,
                 visibility,
-                status
+                status,
+                tags: tagPublicIds
             });
 
-            const blogId =
-                blog.data.blogPublicId;
+
+            if (coverImage) {
+                const uploadResponse =
+                    await uploadImage(
+                        coverImage,
+                        blogPublicId,
+                        "COVER_IMAGE"
+                    );
+
+                setCoverImageUrl(
+                    uploadResponse.url
+                );
+            }
+
+
+
+
 
             const contentJson =
                 JSON.stringify(content);
@@ -101,14 +221,14 @@ function CreateBlogPage() {
             if (useChunkUpload) {
 
                 await uploadChunkedContent(
-                    blogId,
+                    blogPublicId,
                     contentJson
                 );
 
             } else {
 
                 await createBlogContent(
-                    blogId,
+                    blogPublicId,
                     {
                         content
                     }
@@ -346,6 +466,27 @@ function CreateBlogPage() {
 
                             </div>
 
+                            <div className="mb-3">
+                                <label className="form-label">Tags</label>
+                                <CreatableSelect
+                                    isMulti
+                                    options={tags.map(tag => ({
+                                        value: tag.tagPublicId,
+                                        label: tag.name
+                                    }))}
+                                    value={selectedTags}
+                                    onChange={(value) => {
+                                        console.log(value);
+                                        setSelectedTags(value);
+                                    }}
+                                    onCreateOption={handleCreateTag}
+                                    placeholder="Select or create tags..."
+                                    formatCreateLabel={(inputValue) =>
+                                        `+ Create tag "${inputValue}"`
+                                    }
+                                />
+                            </div>
+
 
                             <div className="d-flex gap-3 mb-4">
 
@@ -404,8 +545,9 @@ function CreateBlogPage() {
                                 </label>
 
                                 <BlogEditor
+                                    blogPublicId={blogPublicId}
                                     content={content}
-                                    onChange={handleContentChange}
+                                    onChange={setContent}
                                 />
 
                                 <div className="d-flex justify-content-between mt-2 text-muted small">

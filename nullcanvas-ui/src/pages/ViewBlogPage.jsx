@@ -11,7 +11,7 @@ function ViewBlogPage() {
 
     useEffect(() => {
         loadBlog();
-    }, []);
+    }, [blogId, slug]);
 
     async function loadBlog() {
 
@@ -31,16 +31,32 @@ function ViewBlogPage() {
     return (
         <div className="container mt-5">
 
-            <h1>
-                {blog.metadata.title}
-            </h1>
+            <h1>{blog.metadata.title}</h1>
 
             <p className="text-muted">
                 {blog.metadata.summary}
             </p>
 
-            <hr />
+            <div className="mb-3">
+                {blog.metadata.tags?.map(tag => (
+                    <span
+                        key={tag.tagPublicId}
+                        className="badge bg-secondary me-2"
+                    >
+                        {tag.name}
+                    </span>
+                ))}
+            </div>
+            <div className="mb-3">
+                <small className="text-muted">
+                    Published on{" "}
+                    {new Date(
+                        blog.metadata.createdAt
+                    ).toLocaleDateString()}
+                </small>
+            </div>
 
+            <hr />
             <BlogViewer
                 content={blog.content}
             />

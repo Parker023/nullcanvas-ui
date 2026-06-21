@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { getBlogContent, updateContent, updateMetadata, uploadImage } from "../api/blogApi";
 import BlogEditor from "../components/BlogEditor";
 import { useNavigate } from "react-router-dom";
+import { getAllTags, createTag } from "../api/tagService";
+import CreatableSelect from "react-select/creatable";
 
 function EditBlogPage() {
 
@@ -20,9 +22,16 @@ function EditBlogPage() {
     const [visibility, setVisibility] = useState("PUBLIC");
     const [status, setStatus] = useState("DRAFT");
     const [coverImageUrl, setCoverImageUrl] = useState("");
+    const [tags, setTags] = useState([]);
+    const [selectedTags, setSelectedTags] = useState([]);
 
     useEffect(() => {
-        loadBlog();
+        async function init() {
+            await loadTags();
+            await loadBlog();
+        }
+
+        init();
     }, [blogId, slug]);
 
     async function loadBlog() {
@@ -35,6 +44,8 @@ function EditBlogPage() {
                     slug
                 );
 
+
+
             setTitle(response.metadata.title);
             setSummary(response.metadata.summary);
             setVisibility(response.metadata.visibility);
@@ -42,6 +53,12 @@ function EditBlogPage() {
             setContent(response.content);
             setCoverImageUrl(response.metadata.coverImageUrl || "");
 
+            setSelectedTags(
+                response.metadata.tags.map(tag => ({
+                    value: tag.tagPublicId,
+                    label: tag.name
+                }))
+            );
 
 
         } finally {
@@ -50,7 +67,67 @@ function EditBlogPage() {
         }
     }
 
+    const tagOptions = tags.map(tag => ({
+        value: tag.tagPublicId,
+        label: tag.name
+    }));
+
+    const handleCreateTag = async (inputValue) => {
+
+        const normalizedInput =
+            inputValue.trim().toLowerCase();
+
+        const existingTag = tags.find(
+            tag =>
+                tag.name.trim().toLowerCase()
+                === normalizedInput
+        );
+
+        if (existingTag) {
+
+            const alreadySelected =
+                selectedTags.some(
+                    selected =>
+                        selected.value === existingTag.tagPublicId
+                );
+
+            if (!alreadySelected) {
+
+                setSelectedTags(prev => [
+                    ...prev,
+                    {
+                        value: existingTag.tagPublicId,
+                        label: existingTag.name
+                    }
+                ]);
+            }
+
+            return;
+        }
+
+        const createdTag =
+            await createTag(inputValue);
+
+        setTags(prev => [
+            ...prev,
+            createdTag
+        ]);
+
+        setSelectedTags(prev => [
+            ...prev,
+            {
+                value: createdTag.tagPublicId,
+                label: createdTag.name
+            }
+        ]);
+    };
+
     async function handleSave() {
+
+        const tagPublicIds =
+            selectedTags.map(
+                tag => tag.value
+            );
 
         try {
 
@@ -61,7 +138,8 @@ function EditBlogPage() {
                     summary,
                     visibility,
                     status,
-                    coverImageUrl
+                    coverImageUrl,
+                    tagPublicIds
                 }
             );
 
@@ -115,6 +193,15 @@ function EditBlogPage() {
             );
         }
     }
+    const loadTags = async () => {
+        try {
+            const response = await getAllTags();
+            console.log("Fetched tags:", response.data);
+            setTags(response.data);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     if (loading) {
         return <div>Loading...</div>;
@@ -182,6 +269,24 @@ function EditBlogPage() {
 
 
             </div>
+
+            <div className="mb-3">
+                <label className="form-label">Tags</label>
+                <CreatableSelect
+                    isMulti
+                    options={tagOptions}
+                    value={selectedTags}
+                    onChange={(value) => {
+                        console.log(value);
+                        setSelectedTags(value);
+                    }}
+                    onCreateOption={handleCreateTag}
+                    placeholder="Select or create tags..."
+                    formatCreateLabel={(inputValue) =>
+                        `+ Create tag "${inputValue}"`
+                    }
+                />
+            </div>
             <div className="mb-4">
 
                 <label className="form-label fw-bold">
@@ -222,6 +327,7 @@ function EditBlogPage() {
 
 
             <BlogEditor
+             blogId={blogId}
                 content={content}
                 onChange={setContent}
             />

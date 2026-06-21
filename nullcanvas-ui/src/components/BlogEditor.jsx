@@ -1,14 +1,20 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useEffect } from "react";
+import Image from "@tiptap/extension-image";
+import { uploadImage, initializeBlog } from "../api/blogApi";
+import { useEffect, useRef } from "react";
 
-export default function BlogEditor({ content, onChange }) {
 
+export default function BlogEditor({ blogPublicId, content, onChange }) {
+    //  console.log("BlogEditor blogPublicId", blogPublicId);
+
+    const imageInputRef = useRef(null);
 
     const editor = useEditor({
         extensions: [
             StarterKit,
+            Image,
             Placeholder.configure({
                 placeholder:
                     "Start writing your story..."
@@ -17,10 +23,49 @@ export default function BlogEditor({ content, onChange }) {
         content: {
             type: "doc",
             content: []
+        },
+        editorProps: {
+            handlePaste(view, event) {
+                console.log("PASTE DETECTED");
+              
+                console.log(event);
+                console.log(event.clipboardData);
+                console.log(event.clipboardData?.getData("text/html"));
+                console.log(event.clipboardData?.getData("text/plain"));
+
+                const items =
+                    event.clipboardData?.items;
+
+                if (!items) {
+                    return false;
+                }
+
+                for (const item of items) {
+
+                    if (
+                        item.type.startsWith(
+                            "image/"
+                        )
+                    ) {
+
+                        const file =
+                            item.getAsFile();
+
+                        handleImagePaste(
+                            file
+                        );
+
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
     });
 
     useEffect(() => {
+
 
         if (!editor) {
             return;
@@ -59,6 +104,74 @@ export default function BlogEditor({ content, onChange }) {
 
     }, [editor, content]);
 
+
+    const handleImagePaste =
+        async (file) => {
+
+            if (!file) {
+                return;
+            }
+
+            try {
+
+                const response =
+                    await uploadImage(
+                        file,
+                        blogPublicId,
+                        "BLOG_CONTENT_IMAGE"
+                    );
+
+                editor
+                    .chain()
+                    .focus()
+                    .setImage({
+                        src: response.url
+                    })
+                    .run();
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Failed to upload image"
+                );
+            }
+        };
+
+    const handleImageUpload = async (event) => {
+
+
+        const file = event.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+
+        try {
+
+            const response = await uploadImage(
+                file,
+                blogPublicId,
+                "BLOG_CONTENT_IMAGE"
+            );
+
+            editor
+                .chain()
+                .focus()
+                .setImage({
+                    src: response.url
+                })
+                .run();
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert("Failed to upload image");
+        }
+    };
 
 
     if (!editor) {
@@ -133,6 +246,20 @@ export default function BlogEditor({ content, onChange }) {
                 >
                     H2
                 </button>
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary me-2"
+                    onClick={() => imageInputRef.current?.click()}
+                >
+                    Insert Image
+                </button>
+                <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleImageUpload}
+                />
                 <button
                     type="button"
                     className={

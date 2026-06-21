@@ -1,0 +1,22 @@
+.blog-content h1,
+.blog-content h2,
+.blog-content h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.blog-content p {
+    line-height: 1.8;
+}
+
+.blog-content blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 1rem;
+    margin: 1rem 0;
+}
+
+.blog-content pre {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+}

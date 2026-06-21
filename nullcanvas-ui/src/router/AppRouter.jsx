@@ -12,7 +12,7 @@ import MyBlogsPage from "../pages/MyBlogsPage";
 import ViewBlogPage from "../pages/ViewBlogPage";
 import EditBlogPage from "../pages/EditBlogPage";
 
-import {ProtectedRoute} from "../components/ProtectedRoute";
+import { ProtectedRoute } from "../components/ProtectedRoute";
 
 function AppRouter() {
     return (
@@ -52,7 +52,7 @@ function AppRouter() {
                     element={<OAuthSuccessPage />}
                 />
 
-                 <Route
+                <Route
                     path="/create-blog"
                     element={
                         <ProtectedRoute>
@@ -61,7 +61,7 @@ function AppRouter() {
                     }
                 />
 
-                 <Route
+                <Route
                     path="/my-blogs"
                     element={
                         <ProtectedRoute>

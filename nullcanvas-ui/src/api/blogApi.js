@@ -12,10 +12,11 @@ export const createBlogContent = async (
 };
 
 export const createBlog = (
+    blogPublicId,
     payload
 ) => {
     return API.post(
-        `/blog/v1/metadata`,
+        `/blog/v1/${blogPublicId}/metadata`,
         payload
     );
 };
@@ -114,4 +115,8 @@ export const uploadImage = async (file, blogId, type) => {
         );
 
     return response.data;
+};
+
+export const initializeBlog = async () => {
+    return API.post("/blog/v1/blogshell");
 };

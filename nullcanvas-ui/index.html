@@ -2,9 +2,41 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/nullcanvas_logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>nullcanvas-ui</title>
+
+    <title>NullCanvas — Read &amp; write ideas worth sharing</title>
+    <meta
+      name="description"
+      content="NullCanvas is a place to write, publish and share your ideas with the world."
+    />
+
+    <!--
+      Baseline social preview card (LinkedIn, Facebook, Slack, WhatsApp, ...).
+      Social crawlers do NOT run JavaScript, so these static tags are what every
+      shared link shows. For per-blog cards (each article's own title/summary/
+      cover image on /blog/:id/:slug), the server must inject these tags into the
+      HTML response — a client SPA can't do that for crawlers.
+
+      TODO: replace https://YOUR_DOMAIN with your production origin.
+    -->
+    <meta property="og:site_name" content="NullCanvas" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NullCanvas — Read &amp; write ideas worth sharing" />
+    <meta
+      property="og:description"
+      content="Discover articles from writers on NullCanvas — no account needed."
+    />
+    <meta property="og:url" content="https://YOUR_DOMAIN" />
+    <meta property="og:image" content="https://YOUR_DOMAIN/nullcanvas_logo.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NullCanvas — Read &amp; write ideas worth sharing" />
+    <meta
+      name="twitter:description"
+      content="Discover articles from writers on NullCanvas — no account needed."
+    />
+    <meta name="twitter:image" content="https://YOUR_DOMAIN/nullcanvas_logo.png" />
   </head>
   <body>
     <div id="root"></div>

@@ -1,7 +1,8 @@
 
 
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import HomePage from "../pages/HomePage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import DashboardPage from "../pages/DashboardPage";
@@ -21,7 +22,7 @@ function AppRouter() {
 
                 <Route
                     path="/"
-                    element={<Navigate to="/login" />}
+                    element={<HomePage />}
                 />
 
                 <Route
@@ -69,13 +70,10 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
+                {/* Public + shareable — readers can open a blog without an account */}
                 <Route
                     path="/blog/:blogId/:slug"
-                    element={
-                        <ProtectedRoute>
-                            <ViewBlogPage />
-                        </ProtectedRoute>
-                    }
+                    element={<ViewBlogPage />}
                 />
 
                 <Route

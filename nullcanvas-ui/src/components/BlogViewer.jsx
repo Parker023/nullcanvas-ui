@@ -1,18 +1,14 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import "../styles/blog.css";
-import Image from "@tiptap/extension-image";
+import { editorExtensions } from "./editorExtensions";
 
 function BlogViewer({ content }) {
 
-   const editor = useEditor({
-    editable: false,
-    extensions: [
-        StarterKit,
-       Image
-    ],
-    content
-});
+    const editor = useEditor({
+        editable: false,
+        extensions: editorExtensions,
+        content
+    });
 
     if (!editor) {
         return null;

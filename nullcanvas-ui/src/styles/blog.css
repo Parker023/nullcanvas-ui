@@ -1,22 +1,62 @@
+.blog-content {
+  font-size: 1.12rem;
+  line-height: 1.85;
+  color: var(--nc-text);
+}
+
+.blog-content .ProseMirror {
+  padding: 0;
+  min-height: unset;
+}
+
 .blog-content h1,
 .blog-content h2,
 .blog-content h3 {
-    margin-top: 1.5rem;
-    margin-bottom: 1rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: var(--nc-heading);
+  letter-spacing: -0.02em;
 }
 
 .blog-content p {
-    line-height: 1.8;
+  line-height: 1.85;
+  margin: 1rem 0;
 }
 
 .blog-content blockquote {
-    border-left: 4px solid #ddd;
-    padding-left: 1rem;
-    margin: 1rem 0;
+  border-left: 3px solid var(--nc-primary);
+  padding: 0.4rem 0 0.4rem 1.2rem;
+  margin: 1.5rem 0;
+  color: var(--nc-text-muted);
+  font-style: italic;
 }
 
 .blog-content pre {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 8px;
+  background: var(--nc-surface-2);
+  border: 1px solid var(--nc-border);
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 14px;
+  margin: 0.5rem 0;
+  vertical-align: middle;
+  display: inline-block;
+  box-shadow: var(--nc-shadow);
+}
+
+.blog-content a {
+  color: var(--nc-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.blog-content hr {
+  border: none;
+  border-top: 2px solid var(--nc-border);
+  margin: 1.75rem 0;
 }

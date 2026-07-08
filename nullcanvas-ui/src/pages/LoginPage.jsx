@@ -4,6 +4,8 @@ import { login } from "../api/authApi";
 import { isValidEmail } from "../util/validation";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import OAuthButtons from "../components/OAuthButtons";
+import AuthLayout from "../components/auth/AuthLayout";
+import { useToast } from "../components/ui/ToastProvider";
 
 function LoginPage() {
     const [email, setEmail] = useState("");
@@ -11,28 +13,29 @@ function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [emailError, setEmailError] = useState("");
     const [error, setError] = useState("");
-
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
-
+    const toast = useToast();
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        try {
-            if (!isValidEmail(email)) {
-                setEmailError("Please enter a valid email address");
-                console.error("Invalid email:", email);
-                return;
-            }
-            setEmailError("");
 
-            const response = await login({
+        if (!isValidEmail(email)) {
+            setEmailError("Please enter a valid email address");
+            return;
+        }
+        setEmailError("");
+        setError("");
+        setLoading(true);
+
+        try {
+            await login({
                 email,
                 password
             });
 
-            console.log(response);
-
+            toast.success("Welcome back!");
             navigate("/dashboard");
 
         } catch (error) {
@@ -41,86 +44,94 @@ function LoginPage() {
                 error.message ||
                 "Something went wrong";
 
-                alert(message);
-
             setError(message);
+            toast.error(message);
+        } finally {
+            setLoading(false);
         }
     };
+
     return (
-        <div className="container vh-100 d-flex justify-content-center align-items-center">
-            <div className="card p-4 shadow" style={{ width: "400px" }}>
+        <AuthLayout>
+            <form onSubmit={handleLogin}>
 
-                <h2 className="text-center mb-4">
-                    NullCanvas Login
+                <h2 className="nc-heading mb-1" style={{ fontSize: "1.7rem" }}>
+                    Welcome back
                 </h2>
+                <p className="nc-muted mb-4">
+                    Log in to continue to your canvas.
+                </p>
 
-                <div className="mb-3">
+                {error && (
+                    <div className="nc-toast nc-toast--error mb-3" style={{ boxShadow: "none" }}>
+                        <i className="nc-toast__icon bi bi-exclamation-octagon-fill" />
+                        <div className="nc-toast__body">{error}</div>
+                    </div>
+                )}
 
+                <div className="nc-field">
+                    <label className="nc-label">Email</label>
                     <input
                         type="email"
-                        className={`form-control ${emailError ? "is-invalid" : ""
-                            }`}
-                        placeholder="Email"
+                        className={`nc-input ${emailError ? "nc-input--invalid" : ""}`}
+                        placeholder="you@example.com"
                         value={email}
                         onChange={(e) => {
                             setEmail(e.target.value);
                             setError("");
+                            setEmailError("");
                         }}
                     />
-
-                    {error && (
-                        <div className="alert alert-danger">
-                            {error}
-                        </div>
-                    )}
-
+                    {emailError && <div className="nc-error">{emailError}</div>}
                 </div>
 
-                <div className="input-group mb-3">
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        className="form-control"
-                        placeholder="Enter password"
-                        value={password}
-                        onChange={(e) => {
-                            setPassword(e.target.value);
-                            setError("");
-                        }}
-                    />
-
-                    <button
-                        type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={() => setShowPassword(!showPassword)}
-                    >
-                        <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`} />
-                    </button>
+                <div className="nc-field">
+                    <label className="nc-label">Password</label>
+                    <div className="nc-input-group">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            className="nc-input"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                setError("");
+                            }}
+                        />
+                        <button
+                            type="button"
+                            className="nc-input-group__btn"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label="Toggle password visibility"
+                        >
+                            <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`} />
+                        </button>
+                    </div>
                 </div>
 
                 <button
-                    className="btn btn-primary w-100"
-                    onClick={handleLogin}
+                    type="submit"
+                    className="nc-btn nc-btn--primary nc-btn--block"
+                    disabled={loading}
                 >
-                    Login
+                    {loading ? "Logging in..." : "Log in"}
+                    {!loading && <i className="bi bi-arrow-right" />}
                 </button>
-                <hr />
+
+                <div className="nc-divider">or continue with</div>
 
                 <OAuthButtons />
 
-                <p className="mt-3 text-center">
+                <p className="text-center nc-muted mt-4 mb-0">
                     Don't have an account?{" "}
-                    <Link to="/register">
-                        Register
+                    <Link to="/register" style={{ color: "var(--nc-primary)", fontWeight: 600 }}>
+                        Create one
                     </Link>
                 </p>
 
-            </div>
-        </div>
-
+            </form>
+        </AuthLayout>
     );
-
-
 }
-
 
 export default LoginPage;

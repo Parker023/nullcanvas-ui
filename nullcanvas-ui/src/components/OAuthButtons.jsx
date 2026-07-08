@@ -14,20 +14,24 @@ function OAuthButtons() {
     };
 
     return (
-        <div className="d-flex justify-content-center gap-4">
+        <div className="nc-oauth">
 
             <button
-                className="btn btn-light border"
+                type="button"
+                className="nc-oauth__btn"
                 onClick={loginWithGoogle}
             >
-                <FaGoogle size={24} />
+                <FaGoogle size={18} />
+                Google
             </button>
 
             <button
-                className="btn btn-light border"
+                type="button"
+                className="nc-oauth__btn"
                 onClick={loginWithGithub}
             >
-                <FaGithub size={24} />
+                <FaGithub size={18} />
+                GitHub
             </button>
 
         </div>

@@ -1,121 +1,149 @@
-import { useState } from "react";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { resendOtp, verifyOtp } from "../api/authApi";
-import { useEffect } from "react";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import AuthLayout from "../components/auth/AuthLayout";
+import { useToast } from "../components/ui/ToastProvider";
+
+const OTP_LENGTH = 6;
 
 function VerifyOtpPage() {
 
     const location = useLocation();
-
     const email = location.state?.email;
 
-    const [otp, setOtp] = useState("");
+    const [digits, setDigits] = useState(Array(OTP_LENGTH).fill(""));
+    const [loading, setLoading] = useState(false);
+    const [countdown, setCountdown] = useState(30);
+    const inputsRef = useRef([]);
 
     const navigate = useNavigate();
-    const [countdown, setCountdown] = useState(30);
+    const toast = useToast();
+
+    const otp = digits.join("");
 
     useEffect(() => {
-
-        if (countdown <= 0) {
-            return;
-        }
-
-        const timer = setTimeout(() => {
-            setCountdown(countdown - 1);
-        }, 1000);
-
+        if (countdown <= 0) return;
+        const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
         return () => clearTimeout(timer);
-
     }, [countdown]);
 
-    const handleVerify = async () => {
+    const focusInput = (i) => inputsRef.current[i]?.focus();
 
-        try {
-            console.log("Verifying OTP for email:", email, "with OTP:", otp);
-
-            await verifyOtp({
-                email,
-                otp
-            });
-
-            alert("Account Verified");
-
-            navigate("/login");
-
-        } catch (error) {
-
-           alert(error.response?.data?.message || "Registration Failed");
+    const handleChange = (i, value) => {
+        const char = value.replace(/\D/g, "").slice(-1);
+        setDigits(prev => {
+            const next = [...prev];
+            next[i] = char;
+            return next;
+        });
+        if (char && i < OTP_LENGTH - 1) {
+            focusInput(i + 1);
         }
     };
 
-    const handleResendOtp
-        = async () => {
+    const handleKeyDown = (i, e) => {
+        if (e.key === "Backspace" && !digits[i] && i > 0) {
+            focusInput(i - 1);
+        }
+    };
 
-            try {
-                console.log("Resending OTP to email:", email);
+    const handlePaste = (e) => {
+        const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+        if (!pasted) return;
+        e.preventDefault();
+        const next = Array(OTP_LENGTH).fill("");
+        pasted.split("").forEach((c, idx) => (next[idx] = c));
+        setDigits(next);
+        focusInput(Math.min(pasted.length, OTP_LENGTH - 1));
+    };
 
-                await resendOtp({
-                    email
-                });
+    const handleVerify = async (e) => {
+        e?.preventDefault();
 
-                alert("OTP Resent");
-                navigate(
-                    "/verify-otp",
-                    {
-                        state: {
-                            email
-                        }
-                    }
-                );
+        if (otp.length !== OTP_LENGTH) {
+            toast.error("Please enter the full code");
+            return;
+        }
 
-            } catch (error) {
-                alert(error.response?.data?.message || "Registration Failed");
-            }
-        };
+        setLoading(true);
+        try {
+            await verifyOtp({ email, otp });
+            toast.success("Account verified — you can log in now.");
+            navigate("/login");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Verification failed");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        try {
+            await resendOtp({ email });
+            toast.success("A new code is on its way.");
+            setCountdown(30);
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Could not resend code");
+        }
+    };
 
     return (
-        <div className="container vh-100 d-flex justify-content-center align-items-center">
+        <AuthLayout>
+            <form onSubmit={handleVerify}>
 
-            <div className="card p-4 shadow" style={{ width: "400px" }}>
+                <div className="nc-empty__icon" style={{ margin: "0 0 1rem" }}>
+                    <i className="bi bi-shield-lock" />
+                </div>
 
-                <h3>Verify OTP</h3>
-
-                <p>
-                    OTP sent to:
-                    <br />
-                    {email}
+                <h2 className="nc-heading mb-1" style={{ fontSize: "1.7rem" }}>
+                    Verify your email
+                </h2>
+                <p className="nc-muted mb-4">
+                    We sent a 6-digit code to<br />
+                    <strong style={{ color: "var(--nc-text)" }}>{email || "your email"}</strong>
                 </p>
 
-                <input
-                    className="form-control"
-                    placeholder="Enter OTP"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                />
+                <div className="d-flex justify-content-between gap-2 mb-4" onPaste={handlePaste}>
+                    {digits.map((d, i) => (
+                        <input
+                            key={i}
+                            ref={(el) => (inputsRef.current[i] = el)}
+                            className="nc-input text-center fw-bold"
+                            style={{ fontSize: "1.5rem", padding: "0.6rem 0", aspectRatio: "1" }}
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={d}
+                            onChange={(e) => handleChange(i, e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(i, e)}
+                        />
+                    ))}
+                </div>
+
                 <button
-                    className="btn btn-primary mt-3 w-100"
-                    onClick={handleVerify}
+                    type="submit"
+                    className="nc-btn nc-btn--primary nc-btn--block"
+                    disabled={loading}
                 >
-                    Verify
+                    {loading ? "Verifying..." : "Verify"}
                 </button>
 
+                <p className="text-center nc-muted mt-4 mb-0">
+                    {countdown > 0 ? (
+                        <>Resend code in {countdown}s</>
+                    ) : (
+                        <button
+                            type="button"
+                            className="nc-btn nc-btn--ghost nc-btn--sm"
+                            onClick={handleResendOtp}
+                        >
+                            <i className="bi bi-arrow-clockwise" /> Resend code
+                        </button>
+                    )}
+                </p>
 
-                {
-                    countdown > 0
-                        ? <p>Resend OTP in {countdown}s</p>
-                        : (
-                            <button
-                                onClick={handleResendOtp}
-                            >
-                                Resend OTP
-                            </button>
-                        )
-                }
-
-            </div>
-        </div>
+            </form>
+        </AuthLayout>
     );
 }
 

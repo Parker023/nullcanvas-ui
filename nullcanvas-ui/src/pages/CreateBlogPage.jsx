@@ -4,14 +4,17 @@ import { createBlogContent, initializeBlog } from "../api/blogApi";
 import { uploadChunk } from "../api/blogApi";
 import BlogEditor from "../components/BlogEditor";
 import { getAllTags, createTag } from "../api/tagService";
-import Select from "react-select";
 import CreatableSelect from "react-select/creatable";
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
+import Navbar from "../components/layout/Navbar";
+import { useToast } from "../components/ui/ToastProvider";
 
+const CHUNK_SIZE = 5000;
 
 function CreateBlogPage() {
 
     const navigate = useNavigate();
+    const toast = useToast();
 
     const [title, setTitle] = useState("");
     const [summary, setSummary] = useState("");
@@ -20,74 +23,46 @@ function CreateBlogPage() {
     const [status, setStatus] = useState("DRAFT");
     const [tags, setTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
-    const [newTagName, setNewTagName] = useState("");
     const [blogPublicId, setBlogPublicId] = useState("");
 
-
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [isDirty, setIsDirty] = useState(false);
     const [coverImage, setCoverImage] = useState(null);
     const [coverPreview, setCoverPreview] = useState(null);
-    const [coverImageUrl, setCoverImageUrl] = useState("");
-
-
-    const CHUNK_SIZE = 5000;
 
     useEffect(() => {
-        
         if (!blogPublicId) {
             initializeDraft();
         }
         loadTags();
     }, []);
 
-
     async function initializeDraft() {
-
         try {
-
-            const response =
-                await initializeBlog();
-
-            setBlogPublicId(
-                response.data.blogPublicId
-            );
-
-           console.log("BlogEditor blogPublicId", response);
-
-
+            const response = await initializeBlog();
+            setBlogPublicId(response.data.blogPublicId);
         } catch (error) {
-
             console.error(error);
-
-            alert(
-                "Failed to initialize blog"
-            );
+            toast.error("Failed to initialize blog");
         } finally {
-
             setLoading(false);
         }
     }
 
-    const tagOptions = tags.map(tag => ({
-        value: tag.publicId,
-        label: tag.name
-    }));
-
     const plainText = useMemo(() => {
-
-        return content
-            ? extractText(content)
-            : "";
-
+        return content ? extractText(content) : "";
     }, [content]);
 
     const loadTags = async () => {
-        const response = await getAllTags();
-        setTags(response.data);
+        try {
+            const response = await getAllTags();
+            setTags(response.data);
+        } catch (error) {
+            console.error(error);
+        }
     };
-
 
     const handleCreateTag = async (inputValue) => {
         const normalizedInput = inputValue.trim().toLowerCase();
@@ -97,22 +72,20 @@ function CreateBlogPage() {
         }
 
         const existingTag = tags.find(
-            tag =>
-                tag.name.trim().toLowerCase() === normalizedInput
+            tag => tag.name.trim().toLowerCase() === normalizedInput
         );
 
         if (existingTag) {
             const alreadySelected = selectedTags.some(
-                selected =>
-                    selected.value === existingTag.publicId
+                selected => selected.value === existingTag.tagPublicId
             );
 
             if (!alreadySelected) {
                 setSelectedTags(prev => [
                     ...prev,
                     {
-                        value: createdTag.tagPublicId,
-                        label: createdTag.name
+                        value: existingTag.tagPublicId,
+                        label: existingTag.name
                     }
                 ]);
             }
@@ -122,11 +95,9 @@ function CreateBlogPage() {
 
         try {
             const response = await createTag(inputValue);
-
             const createdTag = response.data;
 
             setTags(prev => [...prev, createdTag]);
-
             setSelectedTags(prev => [
                 ...prev,
                 {
@@ -136,57 +107,35 @@ function CreateBlogPage() {
             ]);
         } catch (error) {
             console.error("Failed to create tag", error);
+            toast.error("Failed to create tag");
         }
     };
 
-    const handleContentChange = useCallback((value) => {
-
-        setContent(value);
-        setIsDirty(true);
-
-    }, []);
-
-
-    const wordCount = plainText
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .length;
-
-    const readingTime =
-        Math.max(
-            1,
-            Math.ceil(wordCount / 200)
-        );
-
+    const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length;
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
     const handleSave = async (e) => {
-
         e.preventDefault();
-
         setError("");
 
         if (!title.trim()) {
             setError("Title is required");
+            toast.error("Title is required");
             return;
         }
 
-        if (
-            !content ||
-            !content.content ||
-            content.content.length === 0
-        ) {
+        if (!content || !content.content || content.content.length === 0) {
             setError("Content is required");
+            toast.error("Content is required");
             return;
         }
+
+        setSaving(true);
 
         try {
-
-
             const tagPublicIds = selectedTags.map(tag => tag.value);
 
-
-            const blog = await createBlog(blogPublicId, {
+            await createBlog(blogPublicId, {
                 title,
                 summary,
                 visibility,
@@ -194,390 +143,267 @@ function CreateBlogPage() {
                 tags: tagPublicIds
             });
 
-
             if (coverImage) {
-                const uploadResponse =
-                    await uploadImage(
-                        coverImage,
-                        blogPublicId,
-                        "COVER_IMAGE"
-                    );
-
-                setCoverImageUrl(
-                    uploadResponse.url
-                );
+                await uploadImage(coverImage, blogPublicId, "COVER_IMAGE");
             }
 
-
-
-
-
-            const contentJson =
-                JSON.stringify(content);
-
-            const useChunkUpload =
-                contentJson.length > CHUNK_SIZE;
+            const contentJson = JSON.stringify(content);
+            const useChunkUpload = contentJson.length > CHUNK_SIZE;
 
             if (useChunkUpload) {
-
-                await uploadChunkedContent(
-                    blogPublicId,
-                    contentJson
-                );
-
+                await uploadChunkedContent(blogPublicId, contentJson);
             } else {
-
-                await createBlogContent(
-                    blogPublicId,
-                    {
-                        content
-                    }
-                );
-
+                await createBlogContent(blogPublicId, { content });
             }
-            setIsDirty(false);
 
+            setIsDirty(false);
+            toast.success("Blog saved!");
             navigate("/dashboard");
 
         } catch (err) {
-
             console.error(err);
-
-            setError(
-                err?.response?.data?.message ||
-                "Failed to create blog"
-            );
-
+            const message = err?.response?.data?.message || "Failed to create blog";
+            setError(message);
+            toast.error(message);
         } finally {
-
-            setLoading(false);
-
+            setSaving(false);
         }
     };
 
     const handleCoverImageChange = (e) => {
-
         const file = e.target.files?.[0];
-
         if (!file) {
             return;
         }
-
         setCoverImage(file);
-
-        setCoverPreview(
-            URL.createObjectURL(file)
-        );
+        setCoverPreview(URL.createObjectURL(file));
+        setIsDirty(true);
     };
 
     function splitIntoChunks(content) {
-
         const chunks = [];
-
-        for (
-            let i = 0;
-            i < content.length;
-            i += CHUNK_SIZE
-        ) {
-
-            chunks.push(
-                content.slice(
-                    i,
-                    i + CHUNK_SIZE
-                )
-            );
-
+        for (let i = 0; i < content.length; i += CHUNK_SIZE) {
+            chunks.push(content.slice(i, i + CHUNK_SIZE));
         }
-
         return chunks;
     }
 
-    async function uploadChunkedContent(
-        blogId,
-        content
-    ) {
+    async function uploadChunkedContent(blogId, content) {
+        const chunks = splitIntoChunks(content);
 
-        const chunks =
-            splitIntoChunks(content);
-
-
-
-        for (
-            let i = 0;
-            i < chunks.length;
-            i++
-        ) {
-            console.log(
-                `Uploading chunk ${i + 1}/${chunks.length}`
-            );
-
-            await uploadChunk(
-                blogId,
-                {
-                    chunkSeq: i + 1,
-                    chunk: chunks[i],
-                    isFinalChunk:
-                        i === chunks.length - 1
-                }
-            );
-
+        for (let i = 0; i < chunks.length; i++) {
+            await uploadChunk(blogId, {
+                chunkSeq: i + 1,
+                chunk: chunks[i],
+                isFinalChunk: i === chunks.length - 1
+            });
         }
-
     }
 
     function extractText(node) {
-
         if (!node) {
             return "";
         }
-
         if (node.type === "text") {
             return node.text || "";
         }
-
         let text = "";
-
         if (node.content) {
             node.content.forEach(child => {
                 text += extractText(child) + " ";
             });
         }
-
         return text;
     }
 
+    if (loading) {
+        return (
+            <>
+                <Navbar />
+                <div className="nc-fullscreen-loader">
+                    <div className="nc-spinner" />
+                    <div className="nc-muted">Preparing your canvas...</div>
+                </div>
+            </>
+        );
+    }
+
     return (
-        <div className="container mt-5">
+        <>
+            <Navbar />
 
-            <div className="row justify-content-center">
+            <div className="nc-container nc-container--narrow">
 
-                <div className="col-lg-10 col-xl-8">
-
-
-                    <div className="card-body">
-
-
-                        {error && (
-                            <div className="alert alert-danger">
-                                {error}
-                            </div>
-                        )}
-
-
-
-                        <div
-                            className="d-flex justify-content-between align-items-center py-3 mb-4 bg-white"
-                            style={{
-                                position: "sticky",
-                                top: 0,
-                                zIndex: 1000
-                            }}
+                {/* Sticky action bar */}
+                <div
+                    className="d-flex justify-content-between align-items-center mb-4 py-2"
+                    style={{
+                        position: "sticky",
+                        top: 64,
+                        zIndex: 900
+                    }}
+                >
+                    <div className="d-flex align-items-center gap-2">
+                        <button
+                            type="button"
+                            className="nc-btn nc-btn--ghost nc-btn--sm"
+                            onClick={() => navigate(-1)}
                         >
-
-                            <div>
-                                <h5 className="text-muted mb-0">
-                                    New Blog
-                                </h5>
-                            </div>
-
-                            <div className="d-flex align-items-center gap-3">
-
-                                {isDirty ? (
-                                    <span className="text-warning">
-                                        Unsaved Changes
-                                    </span>
-                                ) : (
-                                    <span className="text-success">
-                                        Saved
-                                    </span>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    disabled={loading}
-                                    onClick={handleSave}
-                                >
-                                    {loading ? "Saving..." : "Save Blog"}
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                        <form onSubmit={handleSave}>
-
-                            <div className="mb-3">
-
-                                <div className="mb-4">
-
-                                    <label className="form-label fw-semibold">
-                                        Cover Image
-                                    </label>
-
-                                    <input
-                                        type="file"
-                                        className="form-control"
-                                        accept="image/*"
-                                        onChange={handleCoverImageChange}
-                                    />
-
-                                    {
-                                        coverPreview && (
-                                            <div className="mb-4">
-
-                                                <img
-                                                    src={coverPreview}
-                                                    alt="Cover Preview"
-                                                    className="img-fluid rounded shadow-sm"
-                                                />
-
-                                            </div>
-                                        )
-                                    }
-
-                                </div>
-
-                                <input
-                                    type="text"
-                                    className="form-control border-0 shadow-none fs-1 fw-bold"
-                                    placeholder="Untitled Blog"
-                                    value={title}
-                                    onChange={(e) => {
-                                        setTitle(e.target.value);
-                                        setIsDirty(true);
-                                    }}
-                                />
-
-                            </div>
-
-                            <div className="mb-3">
-
-                                <textarea
-                                    rows="2"
-                                    className="form-control border-0 shadow-none text-muted"
-                                    placeholder="Write a short summary..."
-                                    value={summary}
-                                    onChange={(e) => {
-                                        setSummary(e.target.value);
-                                        setIsDirty(true);
-                                    }}
-                                />
-
-                            </div>
-
-                            <div className="mb-3">
-                                <label className="form-label">Tags</label>
-                                <CreatableSelect
-                                    isMulti
-                                    options={tags.map(tag => ({
-                                        value: tag.tagPublicId,
-                                        label: tag.name
-                                    }))}
-                                    value={selectedTags}
-                                    onChange={(value) => {
-                                        console.log(value);
-                                        setSelectedTags(value);
-                                    }}
-                                    onCreateOption={handleCreateTag}
-                                    placeholder="Select or create tags..."
-                                    formatCreateLabel={(inputValue) =>
-                                        `+ Create tag "${inputValue}"`
-                                    }
-                                />
-                            </div>
-
-
-                            <div className="d-flex gap-3 mb-4">
-
-                                <div>
-                                    <label className="form-label small text-muted">
-                                        Visibility
-                                    </label>
-
-                                    <select
-                                        className="form-select"
-                                        value={visibility}
-                                        onChange={(e) =>
-                                            setVisibility(e.target.value)
-                                        }
-                                    >
-                                        <option value="PUBLIC">
-                                            Public
-                                        </option>
-
-                                        <option value="PRIVATE">
-                                            Private
-                                        </option>
-
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="form-label small text-muted">
-                                        Status
-                                    </label>
-
-                                    <select
-                                        className="form-select"
-                                        value={status}
-                                        onChange={(e) =>
-                                            setStatus(e.target.value)
-                                        }
-                                    >
-                                        <option value="DRAFT">
-                                            Draft
-                                        </option>
-
-                                        <option value="PUBLISHED">
-                                            Publish
-                                        </option>
-
-                                    </select>
-                                </div>
-
-                            </div>
-
-                            <div className="mb-3">
-
-                                <label className="form-label">
-                                    Content
-                                </label>
-
-                                <BlogEditor
-                                    blogPublicId={blogPublicId}
-                                    content={content}
-                                    onChange={setContent}
-                                />
-
-                                <div className="d-flex justify-content-between mt-2 text-muted small">
-
-                                    <span>
-                                        {wordCount} words
-                                    </span>
-
-                                    <span>
-                                        {readingTime} min read
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-
-
-                        </form>
-
+                            <i className="bi bi-arrow-left" />
+                        </button>
+                        <span className={`nc-chip ${isDirty ? "nc-chip--warning" : "nc-chip--success"}`}>
+                            <span className="nc-dot" />
+                            {isDirty ? "Unsaved changes" : "Ready"}
+                        </span>
                     </div>
 
-
-
+                    <button
+                        type="submit"
+                        className="nc-btn nc-btn--primary"
+                        disabled={saving}
+                        onClick={handleSave}
+                    >
+                        {saving ? "Saving..." : "Save Blog"}
+                        {!saving && <i className="bi bi-check-lg" />}
+                    </button>
                 </div>
 
+                {error && (
+                    <div className="nc-toast nc-toast--error mb-3" style={{ boxShadow: "none" }}>
+                        <i className="nc-toast__icon bi bi-exclamation-octagon-fill" />
+                        <div className="nc-toast__body">{error}</div>
+                    </div>
+                )}
+
+                <form onSubmit={handleSave}>
+
+                    {/* Cover image */}
+                    <label className="nc-label">Cover image</label>
+                    {coverPreview ? (
+                        <div className="position-relative mb-3">
+                            <img
+                                src={coverPreview}
+                                alt="Cover preview"
+                                className="w-100 rounded"
+                                style={{ maxHeight: 320, objectFit: "cover", borderRadius: "var(--nc-radius)" }}
+                            />
+                            <button
+                                type="button"
+                                className="nc-btn nc-btn--ghost nc-btn--sm position-absolute"
+                                style={{ top: 12, right: 12, background: "var(--nc-surface)" }}
+                                onClick={() => { setCoverImage(null); setCoverPreview(null); }}
+                            >
+                                <i className="bi bi-trash" /> Remove
+                            </button>
+                        </div>
+                    ) : (
+                        <label
+                            className="nc-empty d-block mb-3"
+                            style={{ cursor: "pointer", padding: "2rem" }}
+                        >
+                            <div className="nc-empty__icon" style={{ width: 52, height: 52 }}>
+                                <i className="bi bi-cloud-arrow-up" />
+                            </div>
+                            <div className="nc-muted">Click to upload a cover image</div>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="d-none"
+                                onChange={handleCoverImageChange}
+                            />
+                        </label>
+                    )}
+
+                    {/* Title */}
+                    <input
+                        type="text"
+                        className="nc-input mb-3"
+                        style={{ fontSize: "1.8rem", fontWeight: 700, border: "none", background: "transparent", padding: "0.5rem 0" }}
+                        placeholder="Untitled Blog"
+                        value={title}
+                        onChange={(e) => { setTitle(e.target.value); setIsDirty(true); }}
+                    />
+
+                    {/* Summary */}
+                    <textarea
+                        rows="2"
+                        className="nc-textarea mb-4"
+                        style={{ border: "none", background: "transparent", padding: "0 0 0.5rem", color: "var(--nc-text-muted)" }}
+                        placeholder="Write a short summary..."
+                        value={summary}
+                        onChange={(e) => { setSummary(e.target.value); setIsDirty(true); }}
+                    />
+
+                    {/* Tags */}
+                    <div className="nc-field">
+                        <label className="nc-label">Tags</label>
+                        <CreatableSelect
+                            isMulti
+                            classNamePrefix="nc-rs"
+                            options={tags.map(tag => ({
+                                value: tag.tagPublicId,
+                                label: tag.name
+                            }))}
+                            value={selectedTags}
+                            onChange={(value) => { setSelectedTags(value); setIsDirty(true); }}
+                            onCreateOption={handleCreateTag}
+                            placeholder="Select or create tags..."
+                            formatCreateLabel={(inputValue) => `+ Create tag "${inputValue}"`}
+                        />
+                    </div>
+
+                    {/* Visibility + status */}
+                    <div className="d-flex flex-wrap gap-4 mb-4">
+                        <div>
+                            <label className="nc-label">Visibility</label>
+                            <div className="nc-segment">
+                                {["PUBLIC", "PRIVATE"].map(v => (
+                                    <button
+                                        key={v}
+                                        type="button"
+                                        className={`nc-segment__btn ${visibility === v ? "nc-segment__btn--active" : ""}`}
+                                        onClick={() => { setVisibility(v); setIsDirty(true); }}
+                                    >
+                                        {v === "PUBLIC" ? "Public" : "Private"}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="nc-label">Status</label>
+                            <div className="nc-segment">
+                                {[["DRAFT", "Draft"], ["PUBLISHED", "Publish"]].map(([v, label]) => (
+                                    <button
+                                        key={v}
+                                        type="button"
+                                        className={`nc-segment__btn ${status === v ? "nc-segment__btn--active" : ""}`}
+                                        onClick={() => { setStatus(v); setIsDirty(true); }}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Content editor */}
+                    <label className="nc-label">Content</label>
+                    <BlogEditor
+                        blogPublicId={blogPublicId}
+                        content={content}
+                        onChange={(value) => { setContent(value); setIsDirty(true); }}
+                    />
+
+                    <div className="d-flex justify-content-between mt-2 nc-muted" style={{ fontSize: "0.82rem" }}>
+                        <span>{wordCount} words</span>
+                        <span>{readingTime} min read</span>
+                    </div>
+
+                </form>
 
             </div>
-
-        </div>
+        </>
     );
 }
 

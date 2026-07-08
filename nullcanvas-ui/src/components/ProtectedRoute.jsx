@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { me } from "../api/authApi";
+import { FullscreenLoader } from "./ui/Loader";
 
 function ProtectedRoute({ children }) {
 
@@ -23,7 +24,7 @@ function ProtectedRoute({ children }) {
     }, []);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <FullscreenLoader label="Checking your session..." />;
     }
 
     return authenticated
